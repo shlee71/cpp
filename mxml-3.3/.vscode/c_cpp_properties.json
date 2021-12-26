@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "/usr/include/**",
+                "/home/shlee/cpp/**",
+                "/gbatm/shca/inc/**",
+                "/home/shlee/cpp/mxml-3.3/**",
+                "/usr/lib/gcc/x86_64-redhat-linux/8/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}

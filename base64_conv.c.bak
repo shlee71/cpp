@@ -1,0 +1,223 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<ctype.h>
+
+#define BAD     -1
+#define DECODE64(c)  (isascii(c) ? base64val[c] : BAD)
+ 
+static const char base64digits[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+char base64val[128];
+
+int encode_base64(unsigned char *out,const unsigned char *in, int inlen);
+int decode_base64(unsigned char *out,const unsigned char *in);
+ 
+int main(void)
+{
+    char   in_password[20+1], out_password[100+1];
+    int    i;
+    long   len;
+ 
+    for (i=0; i<128; i++) {
+        base64val[i] = BAD;
+    }
+ 
+    for (i=0; i<64; i++) {
+        base64val[base64digits[i]] = i;
+    }
+ 
+    strcpy(in_password, "ABCD");
+    memset(out_password, 0x00, sizeof(out_password));
+    len = encode_base64(out_password, in_password, strlen(in_password));
+    
+    if ( len <= 0 )
+    {
+        exit(0);
+    }
+    printf("in=(%s), %ld, out=(%s), %ld\n",
+    in_password, strlen(in_password), out_password, len);
+
+    memset(in_password, 0x00, sizeof(in_password));
+
+    len = decode_base64(in_password,  out_password);
+    printf("in=(%s), out=(%s), %ld\n", in_password, out_password, len);
+ 
+    exit(1);
+}
+ 
+int encode_base64(unsigned char *out, const unsigned char *in, int inlen)
+{
+    int out_len = 0, loop_len = 0, i= 0;
+    unsigned char pos;
+    printf("start encode_base64 \n ");
+    
+    if ( inlen <= 0 )
+    {
+        return 0;
+    }
+
+    if ( inlen % 3 != 0 )
+    {
+        out_len  = ( inlen / 3 + 1) * 4;
+        loop_len = ( inlen / 3 ) * 3;
+    }
+    else
+    {
+        out_len  = ( inlen / 3 ) * 4;
+        loop_len = inlen;
+    }
+
+    /* Make 3 byte Input to 4 byte */
+    for ( i = 0; i < loop_len; i+=3)
+    {   
+        /* bit from  1 to  6 >> 1st Byte */
+        pos = (in[0] >> 2) & 0x3F;  
+       *out++ = base64digits[pos];
+
+        printf("%d %02X %02X\n",i, pos, *(out-1));
+
+        /* bit from  7 to 12 >> 2nd Byte */
+        pos = (((in[0] << 4) | (in[1] >> 4)) & 0x3F);
+        *out++ = base64digits[pos];
+
+        printf("%d %02X %02X\n",i+1, pos, *(out-1));
+
+        /* bit from 13 to 18 >> 3rd Byte */
+        pos = (((in[1] << 2) | (in[2] >> 6)) & 0x3F);
+        *out++ = base64digits[pos];
+
+        printf("%d %02X %02X\n",i+2, pos, *(out-1));
+
+        /* bit from 19 to 24 >> 4th Byte */
+        pos = (in[2] & 0x3F);
+        
+        in +=3;
+        *out++ = base64digits[pos];
+
+        printf("%d %02X %02X\n",i+3, pos, *(out-1));
+    }
+    
+    printf("loop_len[%d] inlen [%d]\n",loop_len, inlen);    
+ 
+    if (loop_len < inlen)
+    {
+        /* bit from  1 to  6 >> 1st Byte */
+        pos = ( in[0] >> 2 ) & 0x3F;
+        *out++ = base64digits[pos];
+        printf("%d %02X %02X\n", loop_len+1, pos, *(out-1));
+
+        if (inlen - loop_len > 1)  
+		{ 
+            /* bit from  7 to 12 >> 2nd Byte */
+            pos = (((in[0] << 4) | (in[1] >> 4)) & 0x3F);
+            *out++ = base64digits[pos];
+
+            printf("%d %02X %02X\n",loop_len+2, pos, *(out-1));
+ 
+            /* bit from 13 to 18 >> 3rd Byte */
+            pos = (((in[1] << 2) | (in[2] >> 6)) & 0x3F);
+            *out++ = base64digits[pos];
+
+            printf("%d %02X %02X\n",loop_len+3, pos, *(out-1));
+        }
+        else 
+		{
+            /* bit from  7 to 12 >> 2nd Byte */
+            /* pos = (((in[0] << 4) | (0x00 >> 4)) & 0x3F); */
+            pos = ((in[0] << 4) & 0x3F);
+            *out++ = base64digits[pos];
+            *out++ = '=';     
+            printf("%d %02X %02X\n",loop_len+2, pos, *(out-1));            
+        }
+
+        *out++ = '=';
+    }
+
+    *out++ = 0x00;
+
+    printf(" out ==> [%d]][%s]\n",  inlen, out);
+    
+    return out_len;
+}
+ 
+int decode_base64(unsigned char *out, const unsigned char *in)
+{
+    int len = 0, i=0, j=0, pad = 0;
+    unsigned char digit1, digit2, digit3, digit4;
+    unsigned char dc1, dc2, dc3, dc4;
+    unsigned char in_c[4096+1];
+    
+    printf("start decode_base64\n");
+
+    // No Data Input Check
+     if ( strlen(in) == 0) return 0;
+
+    // Boundary Input Data Redefine
+    for( i = 0; i < strlen(in); i++ )
+    {
+        if ( ( in[i] >= '0' && in[i] >= '9' ) || 
+             ( in[i] >= 'A' && in[i] <= 'Z' ) ||
+             ( in[i] >= 'a' && in[i] <= 'z' ) ||
+             ( in[i] == '+' && in[i] == '/' )) {
+            in_c[j] = in[i];
+            j++;
+        }
+        else {
+            if ( in[i] != '=' ) {
+                printf("Warning >> Not Defined in Base64 Table[%02X]", in[i]);
+            }
+        }
+    }
+    
+    // Fault Tolerance : devide by 4 is not Zero
+    if ( j% 4 != 0 ) {
+        memset(in_c + j, '=', ((j/4)*4 +4) - j);
+        j = (j/4) * 4 + 4;
+        
+        printf("\nWarning >> Input Data Length Modified from %ld to %d\n", strlen(in), j);
+    }
+    printf("\nInput Data ==> [%s]\n", in_c);
+    
+    for ( i= 0; i < j; i+=4 )
+    {
+        digit1 = in_c[i +0];
+        digit2 = in_c[i +1];
+        digit3 = in_c[i +2];
+        digit4 = in_c[i +3];
+
+        dc1 = DECODE64(digit1);
+        dc2 = DECODE64(digit2);
+        
+        if ( digit3 == '=' )
+        {
+            dc3 = 0x00;
+            pad++;
+        }
+        else
+        {
+            dc3 = DECODE64(digit3);
+        }
+        
+        if ( digit4 == '=' )
+        {
+            dc4 = 0x00;
+            pad++;
+        }
+        else
+        {
+            dc4 = DECODE64(digit4);
+        }
+        
+        printf("dc1[%02X], dc2[%02X], dc3[%02X], dc4[%02X]\n", dc1, dc2, dc3, dc4);
+        
+        *out++ = (dc1 << 2) | (dc2 >> 4);
+        *out++ = (dc2 << 4) | (dc3 >> 2);
+        *out++ = (dc3 << 6) | (dc4)     ;
+        printf(" out1[%02X] out2[%02X] out3[%02X]\n", *(out-3),*(out-2),*(out-1));
+    }
+    
+    len = (j/4)*3 - pad;
+    out[len] = 0x00;
+
+    return len;
+}

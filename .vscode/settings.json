@@ -1,0 +1,8 @@
+{
+    "C_Cpp.errorSquiggles": "Disabled",
+    "files.associations": {
+        "config.h": "c",
+        "mxml.h": "c",
+        "mxml-private.h": "c"
+    }
+}
