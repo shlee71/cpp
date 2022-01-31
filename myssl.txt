@@ -1,0 +1,4 @@
+// pem.h undefined error should be installed openssl-devel
+sudo yum install openssl-devel
+// compile method
+gcc main.c -o main -I /usr/local/ssl/include -L /usr/local/ssl/lib -lssl -lcrypto -Wall
