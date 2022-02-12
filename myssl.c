@@ -16,7 +16,8 @@ RSA * createRSA(unsigned char * key,int public)
 {
     RSA *rsa= NULL;
     BIO *keybio ;
-    keybio = BIO_new_mem_buf(key, -1); // 읽기 전용 메모리 만들기 BIO
+    // 읽기 전용 메모리 만들기 BIO
+    keybio = BIO_new_mem_buf(key, -1); 
     if (keybio==NULL)
     {
         printf( "Failed to create key BIO");
@@ -28,7 +29,8 @@ RSA * createRSA(unsigned char * key,int public)
     if(public) // PEM public 키로 RSA 생성
     {
         rsa = PEM_read_bio_RSA_PUBKEY(keybio, &rsa, NULL, NULL);
-    }else // PEM private 키로 RSA 생성
+    }
+    else // PEM private 키로 RSA 생성
     {
         rsa = PEM_read_bio_RSAPrivateKey(keybio, &rsa, NULL, NULL);
     }
@@ -88,7 +90,9 @@ size_t calcDecodeLength(const char* b64input) { //Calculates the length of a dec
 
 	return (len*3)/4 - padding;
 }
-int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { //Encodes a binary safe base 64 string
+int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) 
+{ 
+    //Encodes a binary safe base 64 string
 	BIO *bio, *b64;
 	BUF_MEM *bufferPtr;
 
@@ -119,7 +123,9 @@ int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { /
 	}
 }
 
-int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //Decodes a base64 encoded string
+int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) 
+{
+    //Decodes a base64 encoded string
 	BIO *bio, *b64;
 
 	int decodeLen = calcDecodeLength(b64message);
@@ -139,10 +145,12 @@ int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //D
 }
 
  
-int main(){
+int main(int argc, char *argv)
+{
  
     char plainText[2048/8] = "This is test Text"; //key length : 2048
  
+ /*
     char publicKey[]="-----BEGIN PUBLIC KEY-----\n"\
                "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1qm64PJaW3eYJhdG6zeW\n"\
                "3fDKIQH0fFMobzvIw7mz5MjTgKABZnjxW/wQzdu370WnxCFixo36xZ/e4eUiPTwC\n"\
@@ -152,7 +160,7 @@ int main(){
                "6YssQglDBWO1TZNtabtV02SLVY8i8GijXinUcW/hzZ6Sl6VNfzpFxqsiM7GObnNP\n"\
                "7QIDAQAB\n"\
                "-----END PUBLIC KEY-----\n";
- 
+
     char privateKey[]="-----BEGIN RSA PRIVATE KEY-----\n"\
                "MIIEowIBAAKCAQEA1qm64PJaW3eYJhdG6zeW3fDKIQH0fFMobzvIw7mz5MjTgKAB\n"\
                "ZnjxW/wQzdu370WnxCFixo36xZ/e4eUiPTwCzzNFS0lE29OcgXiqLzCtu6ykyTEv\n"\
@@ -180,14 +188,50 @@ int main(){
                "vY3Sb0PSNyBh9rGBlZLtCjB/zLAcXxMD1QeqBw6w92fVmF4goGiyc8pdo2ngfCga\n"\
                "Jbl8WTlUY7jH+3Ki7c0FgWVH2MzQol1B3AqHQsSST25nSbw+9Pm1\n"\
                "-----END RSA PRIVATE KEY-----\n";
+*/
+    char publicKey[5000];
+    char privateKey[5000];
+    char buf[1000];
+
+    FILE *fp = NULL;
+    int pos_len;
  
+    unsigned char encrypted[4098]={}; // variable for encrypted data
+    unsigned char decrypted[4098]={}; // variable for decrypted data
  
-    unsigned char encrypted[4098]={}; // 암호화한 결과를 저장할 공간 
-    unsigned char decrypted[4098]={}; // 복호화한 결과를 저장할 공간
- 
+    // publicKey read from public.pem file
+    pos_len = 0;
+    memset(publicKey, 0, sizeof(publicKey));
+    memset(buf, 0, sizeof(buf));
+
+    fp = fopen("myssl_publickey.txt", "r");
+    while( (fgets(buf, sizeof(buf), fp)) != NULL )
+    {
+        memcpy(publicKey  + pos_len, buf, strlen(buf));
+        pos_len = pos_len + strlen(buf);
+        memset(buf, 0, sizeof(buf));
+    }
+    fclose(fp);
+
+    // publicKey read from private.pem file
+    pos_len = 0;
+    memset(privateKey, 0, sizeof(privateKey));
+    memset(buf, 0, sizeof(buf));
+
+    fp = fopen("myssl_privatekey.txt", "r");
+    while( (fgets(buf, sizeof(buf), fp)) != NULL )
+    {
+        memcpy(privateKey  + pos_len, buf, strlen(buf));
+        pos_len = pos_len + strlen(buf);
+        memset(buf, 0, sizeof(buf));
+    }
+    fclose(fp);
+
     printf("Plain Text = %s\n", plainText);
+    printf("%s", privateKey);
+    printf("%s", publicKey);
     
-    /* 공개키로 암호화하기 */
+    /* Encrypted using RSA public Key */
     int encrypted_length= public_encrypt(plainText,strlen(plainText),publicKey,encrypted);
     if(encrypted_length == -1) // RSA_public_encrypt() returns -1 on error
     {
@@ -225,4 +269,3 @@ RSA_public_encrypt() returns the size of the encrypted data (i.e., RSA_size(rsa)
 On error, -1 is returned
 */
 }
- 
