@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "config.h": "c",
-        "mxml-private.h": "c",
-        "mxml.h": "c"
-    }
-}
